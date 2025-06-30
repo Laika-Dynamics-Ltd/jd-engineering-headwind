@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  meshcentral:
+    image: typhonragewind/meshcentral:latest
+    container_name: jd-meshcentral
+    restart: unless-stopped
+    ports:
+      - "8443:443"
+      - "8080:80"
+    environment:
+      - HOSTNAME=jd-fleet-manager.laikadynamics.com
+      - REVERSE_PROXY=false
+      - IFRAME=false
+      - ALLOW_NEW_ACCOUNTS=false
+      - SESSION_RECORDING=true
+      - WEB_TLS=true
+      - AGENT_PORT=8080
+      - AGENT_ALIASPORT=8443
+    volumes:
+      - meshcentral_data:/opt/meshcentral/meshcentral-data
+      - meshcentral_userfiles:/opt/meshcentral/meshcentral-files
+      - meshcentral_backup:/opt/meshcentral/meshcentral-backup
+    networks:
+      - meshcentral_network
+
+volumes:
+  meshcentral_data:
+    driver: local
+  meshcentral_userfiles:
+    driver: local
+  meshcentral_backup:
+    driver: local
+
+networks:
+  meshcentral_network:
+    driver: bridge 

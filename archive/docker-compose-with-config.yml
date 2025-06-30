@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  meshcentral:
+    image: typhonragewind/meshcentral:latest
+    container_name: jd-meshcentral
+    restart: unless-stopped
+    ports:
+      - "9080:80"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - meshcentral_data:/opt/meshcentral/meshcentral-data
+      - meshcentral_userfiles:/opt/meshcentral/meshcentral-files
+      - meshcentral_backup:/opt/meshcentral/meshcentral-backup
+      - ./meshcentral-config.json:/opt/meshcentral/meshcentral-data/config.json
+
+volumes:
+  meshcentral_data:
+  meshcentral_userfiles:
+  meshcentral_backup: 

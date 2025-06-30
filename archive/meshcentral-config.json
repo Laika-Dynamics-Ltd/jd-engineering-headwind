@@ -1,0 +1,40 @@
+{
+  "settings": {
+    "cert": "",
+    "WANonly": true,
+    "LANonly": false,
+    "sessionKey": "MyReallySecretPassword1",
+    "port": 80,
+    "aliasPort": 80,
+    "redirPort": 0,
+    "allowLoginToken": true,
+    "allowFraming": false,
+    "cookieIpCheck": false,
+    "cookieEncoding": "hex",
+    "sessionTime": 60,
+    "sessionSameSite": "lax",
+    "httpsPort": 0,
+    "autoBackup": {
+      "backupIntervalHours": 24,
+      "keepLastDaysBackup": 10
+    }
+  },
+  "domains": {
+    "": {
+      "title": "JD Engineering Fleet Management",
+      "title2": "Tablet Control Center",
+      "newAccounts": false,
+      "certUrl": "http://jd-fleet-manager.laikadynamics.com:9080/",
+      "httpHeaders": {
+        "Strict-Transport-Security": "max-age=0"
+      },
+      "sessionRecording": {
+        "protocols": [ 1, 2, 5, 6, 100, 101, 200, 201 ]
+      },
+      "agentInviteCodes": true,
+      "userNameIsEmail": false,
+      "footer": "Powered by Laika Dynamics | JD Engineering Ltd",
+      "welcomeText": "Welcome to JD Engineering Fleet Management System."
+    }
+  }
+} 

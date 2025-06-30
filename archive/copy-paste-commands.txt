@@ -1,0 +1,81 @@
+# ===============================================================
+# BULLET-PROOF MESHCENTRAL DEPLOYMENT - COPY THESE COMMANDS
+# ===============================================================
+
+# 1. SSH into your Coolify VPS server (replace with your server IP)
+ssh root@your-server-ip
+
+# 2. Stop any existing MeshCentral containers
+docker stop jd-meshcentral 2>/dev/null || true
+docker rm jd-meshcentral 2>/dev/null || true
+
+# 3. One-line deployment (FASTEST)
+docker run -d --name jd-meshcentral --restart unless-stopped -p 3000:80 -v meshcentral_data:/opt/meshcentral/meshcentral-data typhonragewind/meshcentral:latest
+
+# 4. Check if it's running
+docker ps | grep meshcentral
+docker logs jd-meshcentral
+
+# 5. Open firewall port
+ufw allow 3000/tcp
+
+# 6. Access your fleet management system
+echo "✅ Access via: http://$(curl -s ifconfig.me):3000"
+
+# ===============================================================
+# ALTERNATIVE: DOCKER COMPOSE METHOD (More Control)
+# ===============================================================
+
+# 1. Create deployment directory
+mkdir -p /opt/jd-meshcentral && cd /opt/jd-meshcentral
+
+# 2. Create docker-compose.yml
+cat > docker-compose.yml << 'EOF'
+version: '3.8'
+services:
+  meshcentral:
+    image: typhonragewind/meshcentral:latest
+    container_name: jd-meshcentral
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - meshcentral_data:/opt/meshcentral/meshcentral-data
+      - meshcentral_userfiles:/opt/meshcentral/meshcentral-files
+      - meshcentral_backup:/opt/meshcentral/meshcentral-backup
+volumes:
+  meshcentral_data:
+  meshcentral_userfiles:
+  meshcentral_backup:
+EOF
+
+# 3. Start MeshCentral
+docker-compose up -d
+
+# 4. Check status
+docker-compose ps && docker-compose logs
+
+# ===============================================================
+# IMMEDIATE NEXT STEPS AFTER DEPLOYMENT
+# ===============================================================
+
+# Your MeshCentral is now running at: http://your-server-ip:3000
+# 1. Open browser to http://your-server-ip:3000
+# 2. Create admin account: admin@jdengineering.co.nz
+# 3. Set organization: "JD Engineering Ltd"
+# 4. Create device groups: "Test Tablets", "Production Tablets"
+# 5. Download APK for each group
+# 6. Install on tablets via current TeamViewer session
+# 7. Tablets will appear in dashboard immediately
+
+# ===============================================================
+# BUSINESS READY - MANAGED SERVICE PRICING
+# ===============================================================
+# Setup Fee: $500 one-time
+# Monthly Fee: $15/device/month
+# 20 tablets = $300/month recurring revenue
+# Professional remote access solution
+# Bypass Android 15 security restrictions
+# Session recording and file management included 

@@ -1,0 +1,78 @@
+{
+  "settings": {
+    "cert": "jd-fleet-manager.laikadynamics.com",
+    "mongoDb": null,
+    "WANonly": true,
+    "LANonly": false,
+    "maintenanceMode": false,
+    "maxInvalidLogin": { "time": 10, "count": 5 },
+    "allowNewAccounts": false,
+    "allowAccountReset": false,
+    "passwordRequirements": {
+      "min": 8,
+      "max": 128,
+      "upper": 1,
+      "lower": 1,
+      "numeric": 1,
+      "nonalpha": 1
+    },
+    "twoFactorCookieDurationDays": 30,
+    "autoBackup": {
+      "backupIntervalHours": 24,
+      "keepLastDaysBackup": 10,
+      "zipPassword": "JDEngineering2024!"
+    }
+  },
+  "domains": {
+    "": {
+      "title": "JD Engineering Fleet Management",
+      "title2": "Tablet Control Center",
+      "titlePicture": "title-sample.png",
+      "loginPicture": "login-sample.png",
+      "welcomePicture": "welcome-sample.jpg",
+      "footer": "Powered by Laika Dynamics | JD Engineering Ltd",
+      "certUrl": "https://jd-fleet-manager.laikadynamics.com/",
+      "httpHeaders": {
+        "Strict-Transport-Security": "max-age=360000",
+        "X-Frame-Options": "SAMEORIGIN",
+        "Content-Security-Policy": "default-src 'none'; script-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; frame-src 'self'; media-src 'self'"
+      },
+      "sessionRecording": {
+        "onlySelectedUsers": false,
+        "onlySelectedUserGroups": false,
+        "onlySelectedDeviceGroups": false
+      },
+      "desktopMultiplex": true,
+      "terminalMultiplex": true,
+      "filesMultiplex": true,
+      "authStrategies": {
+        "twitter": null,
+        "google": null,
+        "github": null,
+        "reddit": null,
+        "azure": null,
+        "oidc": null,
+        "saml": null,
+        "jumpcloud": null
+      },
+      "newAccounts": false,
+      "newAccountEmailDomains": ["jdengineering.co.nz", "laikadynamics.com"],
+      "userNameIsEmail": true,
+      "agentInviteCodes": true,
+      "agentNoProxy": true,
+      "geoLocation": true,
+      "lockAgentDownload": false,
+      "maxFailedLogin": 5,
+      "welcomeText": "Welcome to JD Engineering Fleet Management System. Manage and monitor your tablet fleet with ease.",
+      "userQuota": -1,
+      "meshQuota": -1,
+      "maxDevicesPerUser": 1000,
+      "limits": {
+        "maxUserAccounts": 50,
+        "maxUserSessions": 100,
+        "maxAgentSessions": 200,
+        "maxSingleUserSessions": 10
+      }
+    }
+  }
+} 

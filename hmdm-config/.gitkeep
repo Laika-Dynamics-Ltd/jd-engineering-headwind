@@ -1,0 +1,2 @@
+# This directory will contain Headwind MDM configuration files
+# It's mounted as a volume in the Docker container 
