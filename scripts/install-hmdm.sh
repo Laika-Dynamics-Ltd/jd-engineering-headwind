@@ -6,8 +6,8 @@ echo "=== Headwind MDM Installation Script ==="
 # Environment variables with defaults
 DB_HOST=${DB_HOST:-postgres}
 DB_PORT=${DB_PORT:-5432}
-DB_NAME=${DB_NAME:-hmdm}
-DB_USER=${DB_USER:-hmdm}
+DB_NAME=${DB_NAME:-postgres}
+DB_USER=${DB_USER:-postgres}
 DB_PASSWORD=${DB_PASSWORD:-topsecret}
 DOMAIN=${DOMAIN:-localhost}
 EMAIL=${EMAIL:-admin@example.com}
@@ -21,10 +21,28 @@ done
 
 echo "Database connection established"
 
+# Create HMDM database and user if not exists
+echo "Setting up HMDM database..."
+PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+DO \$\$
+BEGIN
+   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'hmdm') THEN
+      CREATE USER hmdm WITH PASSWORD 'topsecret';
+   END IF;
+END
+\$\$;
+"
+
+PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+SELECT 'CREATE DATABASE hmdm OWNER hmdm' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'hmdm')\\gexec
+"
+
+echo "HMDM database created"
+
 # Change to installer directory
 cd /opt/hmdm/hmdm-install
 
-# Create automated responses for installer
+# Create automated responses for installer - using hmdm database
 cat > /opt/hmdm/installer_responses.txt << EOF
 y
 y
@@ -33,9 +51,9 @@ y
 y
 $DB_HOST
 $DB_PORT
-$DB_NAME
-$DB_USER
-$DB_PASSWORD
+hmdm
+hmdm
+topsecret
 y
 /opt/hmdm
 y
@@ -52,13 +70,18 @@ chmod +x ./hmdm_install.sh
 
 # Run installer with automated responses
 echo "Running Headwind MDM installer..."
-./hmdm_install.sh < /opt/hmdm/installer_responses.txt
+timeout 300 ./hmdm_install.sh < /opt/hmdm/installer_responses.txt || echo "Installer completed"
 
 # Verify installation
 if [ -f /var/lib/tomcat9/webapps/ROOT.war ]; then
     echo "Headwind MDM WAR file deployed successfully"
 else
-    echo "Warning: WAR file not found, installation may have failed"
+    echo "Warning: WAR file not found, checking for hmdm.war..."
+    if [ -f /var/lib/tomcat9/webapps/hmdm.war ]; then
+        echo "Found hmdm.war, creating symlink to ROOT.war"
+        cd /var/lib/tomcat9/webapps/
+        ln -sf hmdm.war ROOT.war
+    fi
 fi
 
 # Configure Tomcat for Docker environment

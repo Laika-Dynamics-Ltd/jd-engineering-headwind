@@ -34,8 +34,13 @@ install_hmdm() {
 
 # Function to start services
 start_services() {
-    echo "Starting Tomcat 9..."
-    systemctl enable tomcat9 || true
+    echo "Starting Tomcat 9 via supervisord..."
+    
+    # Ensure Tomcat directories exist and have correct permissions
+    mkdir -p /var/lib/tomcat9/conf/Catalina/localhost
+    mkdir -p /var/log/tomcat9
+    chown -R tomcat:tomcat /var/lib/tomcat9
+    chown -R tomcat:tomcat /var/log/tomcat9
     
     echo "Configuring for Coolify deployment..."
     
@@ -43,6 +48,35 @@ start_services() {
     echo "Coolify will handle SSL certificates and reverse proxy"
     
     echo "Starting services via supervisor..."
+    
+    # Start supervisord in the background
+    /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf &
+    
+    # Wait a moment for supervisor to start
+    sleep 5
+    
+    # Check if Tomcat is running
+    echo "Checking Tomcat status..."
+    supervisorctl status tomcat9 || echo "Tomcat status check failed, but continuing..."
+    
+    # Wait for Tomcat to be ready
+    echo "Waiting for Tomcat to start on port 8080..."
+    for i in {1..60}; do
+        if curl -f http://localhost:8080/ >/dev/null 2>&1; then
+            echo "Tomcat is ready!"
+            break
+        fi
+        if [ $i -eq 60 ]; then
+            echo "Tomcat failed to start in 60 seconds"
+            # Show some debug info
+            echo "=== Tomcat Logs ==="
+            tail -50 /var/log/tomcat9/catalina.out 2>/dev/null || echo "No catalina.out found"
+            echo "=== Process List ==="
+            ps aux | grep -E "(tomcat|java)" || echo "No Java/Tomcat processes found"
+        fi
+        echo "Waiting for Tomcat... ($i/60)"
+        sleep 1
+    done
 }
 
 # Main execution
@@ -69,5 +103,5 @@ echo "=== Headwind MDM Ready for Coolify ==="
 echo "Access via Coolify's domain: https://$DOMAIN"
 echo "Tomcat running on port 8080 (internal)"
 
-# Execute the command passed to the container
-exec "$@" 
+# Keep the container running by waiting for supervisord
+wait 

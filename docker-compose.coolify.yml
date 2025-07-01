@@ -1,60 +1,32 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15
-    container_name: hmdm-postgres
-    environment:
-      POSTGRES_DB: hmdm
-      POSTGRES_USER: hmdm
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-topsecret}
-      PGDATA: /var/lib/postgresql/data/pgdata
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - hmdm-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hmdm -d hmdm"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    labels:
-      - "coolify.managed=true"
-
   hmdm:
     build: 
       context: .
       dockerfile: Dockerfile.coolify
     container_name: hmdm-app
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
-      - DB_HOST=postgres
+      - DB_HOST=qkgwosowcss0go40oc00oswo
       - DB_PORT=5432
-      - DB_NAME=hmdm
-      - DB_USER=hmdm
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-topsecret}
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=28DmoIQOAspmJ5t7sDEJ5YWlu6h8MkKB0ia4rPqRHF6WKQ4o9ZdUNSClHgPC3gxC
       - DOMAIN=${DOMAIN:-localhost}
       - EMAIL=${EMAIL:-admin@example.com}
-      - JAVA_OPTS=${JAVA_OPTS:--Xms512m -Xmx2048m}
+      - JAVA_OPTS=${JAVA_OPTS:--Xms512m -Xmx1024m}
       - COOLIFY_DEPLOYMENT=true
-    ports:
-      - "8080:8080"
     volumes:
       - hmdm_data:/opt/hmdm
       - tomcat_data:/var/lib/tomcat9
       - tomcat_logs:/var/log/tomcat9
-    networks:
-      - hmdm-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
-      interval: 60s
-      timeout: 10s
-      retries: 3
-      start_period: 120s
+      interval: 30s
+      timeout: 15s
+      retries: 10
+      start_period: 240s
     labels:
       # Coolify labels for automatic SSL and domain configuration
       - "coolify.managed=true"
@@ -68,8 +40,6 @@ services:
       - "traefik.http.routers.hmdm-http.middlewares=redirect-to-https"
 
 volumes:
-  postgres_data:
-    driver: local
   hmdm_data:
     driver: local
   tomcat_data:
