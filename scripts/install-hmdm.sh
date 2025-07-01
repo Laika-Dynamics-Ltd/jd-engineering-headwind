@@ -134,8 +134,35 @@ fi
 
 # Deploy WAR file to Tomcat
 echo "Deploying HMDM to Tomcat..."
+
+# Remove default Tomcat ROOT to prevent conflicts
+echo "Removing default Tomcat ROOT application..."
+rm -rf /var/lib/tomcat9/webapps/ROOT
+rm -f /var/lib/tomcat9/webapps/ROOT.war
+
+# Deploy our HMDM WAR
 cp /tmp/hmdm.war /var/lib/tomcat9/webapps/ROOT.war
 chown tomcat:tomcat /var/lib/tomcat9/webapps/ROOT.war
+
+# Verify WAR file size and type
+echo "WAR file deployed:"
+ls -la /var/lib/tomcat9/webapps/ROOT.war
+file /var/lib/tomcat9/webapps/ROOT.war
+
+# Extract WAR manually to ensure deployment
+echo "Manually extracting WAR to ensure deployment..."
+cd /var/lib/tomcat9/webapps
+rm -rf ROOT
+mkdir ROOT
+cd ROOT
+jar -xf ../ROOT.war
+
+# Set correct permissions
+chown -R tomcat:tomcat /var/lib/tomcat9/webapps/ROOT
+
+# List contents to verify
+echo "Deployed application contents:"
+ls -la /var/lib/tomcat9/webapps/ROOT/ | head -10
 
 # Create HMDM configuration directory
 mkdir -p /opt/hmdm/conf
