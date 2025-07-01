@@ -44,38 +44,92 @@ echo "HMDM database created"
 echo "Extracting Headwind MDM application from installer..."
 cd /tmp
 
-# Check multiple possible locations for the WAR file
-if [ -f /opt/hmdm/hmdm-install/hmdm.war ]; then
-    cp /opt/hmdm/hmdm-install/hmdm.war /tmp/hmdm.war
-    echo "Found WAR file in installer directory"
-elif [ -f /opt/hmdm/hmdm-install/files/hmdm.war ]; then
-    cp /opt/hmdm/hmdm-install/files/hmdm.war /tmp/hmdm.war
-    echo "Found WAR file in installer files directory"
-elif [ -f /opt/hmdm/hmdm-install/install/hmdm.war ]; then
-    cp /opt/hmdm/hmdm-install/install/hmdm.war /tmp/hmdm.war
-    echo "Found WAR file in install directory"
-else
+# Look for WAR files in installer
+WAR_FOUND=false
+for location in \
+    "/opt/hmdm/hmdm-install/hmdm.war" \
+    "/opt/hmdm/hmdm-install/files/hmdm.war" \
+    "/opt/hmdm/hmdm-install/install/hmdm.war" \
+    "/opt/hmdm/hmdm-install/target/hmdm.war" \
+    "/opt/hmdm/hmdm-install/build/hmdm.war"
+do
+    if [ -f "$location" ]; then
+        echo "Found HMDM WAR file at: $location"
+        cp "$location" /tmp/hmdm.war
+        WAR_FOUND=true
+        break
+    fi
+done
+
+# If no specific WAR found, search recursively
+if [ "$WAR_FOUND" = false ]; then
     echo "Searching for WAR file in installer package..."
-    find /opt/hmdm -name "*.war" -type f | head -1 | xargs -I {} cp {} /tmp/hmdm.war
-    if [ ! -f /tmp/hmdm.war ]; then
-        echo "No WAR file found, creating a minimal test WAR..."
-        # Create a minimal ROOT.war that will show we're working
-        mkdir -p /tmp/webapp/WEB-INF
-        cat > /tmp/webapp/index.html << 'EOF'
+    WAR_FILE=$(find /opt/hmdm -name "*.war" -type f | head -1)
+    if [ -n "$WAR_FILE" ]; then
+        echo "Found WAR file: $WAR_FILE"
+        cp "$WAR_FILE" /tmp/hmdm.war
+        WAR_FOUND=true
+    fi
+fi
+
+# If still no WAR, try to run the installer to generate one
+if [ "$WAR_FOUND" = false ]; then
+    echo "No WAR file found, attempting to build from installer..."
+    cd /opt/hmdm/hmdm-install
+    
+    # Check if there's a build script
+    if [ -f "build.sh" ]; then
+        echo "Running build script..."
+        chmod +x build.sh
+        ./build.sh || echo "Build script failed"
+    elif [ -f "hmdm_install.sh" ]; then
+        echo "Running installer to build WAR..."
+        chmod +x hmdm_install.sh
+        # Try to extract WAR without full installation
+        timeout 60 bash -c 'echo -e "n\ny\ny\ny\nn" | ./hmdm_install.sh' || echo "Installer timeout"
+    fi
+    
+    # Check again for WAR file
+    WAR_FILE=$(find /opt/hmdm -name "*.war" -type f | head -1)
+    if [ -n "$WAR_FILE" ]; then
+        echo "Found generated WAR file: $WAR_FILE"
+        cp "$WAR_FILE" /tmp/hmdm.war
+        WAR_FOUND=true
+    fi
+fi
+
+# Final fallback - create a working placeholder that redirects to setup
+if [ "$WAR_FOUND" = false ]; then
+    echo "Creating setup placeholder WAR..."
+    mkdir -p /tmp/webapp/WEB-INF
+    cat > /tmp/webapp/index.html << 'EOF'
 <!DOCTYPE html>
 <html>
-<head><title>Headwind MDM - Installation in Progress</title></head>
+<head>
+    <title>Headwind MDM - Setup Required</title>
+    <meta http-equiv="refresh" content="0;url=/setup">
+</head>
 <body>
-<h1>Headwind MDM Installation</h1>
-<p>The system is running but HMDM application needs to be configured.</p>
-<p>Check the logs for installation progress.</p>
+    <h1>Headwind MDM</h1>
+    <p>Redirecting to setup...</p>
+    <p>If not redirected, <a href="/setup">click here</a></p>
 </body>
 </html>
 EOF
-        cd /tmp/webapp
-        jar -cf /tmp/hmdm.war .
-        echo "Created placeholder WAR file"
-    fi
+    
+    cat > /tmp/webapp/WEB-INF/web.xml << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="3.0" xmlns="http://java.sun.com/xml/ns/javaee">
+    <display-name>Headwind MDM</display-name>
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+</web-app>
+EOF
+    
+    cd /tmp/webapp
+    jar -cf /tmp/hmdm.war .
+    echo "Created placeholder WAR file"
 fi
 
 # Deploy WAR file to Tomcat
@@ -125,29 +179,9 @@ EOF
 echo "Waiting for WAR deployment..."
 sleep 10
 
-# Initialize database schema if needed
-echo "Initializing database schema..."
-PGPASSWORD=topsecret psql -h $DB_HOST -p $DB_PORT -U hmdm -d hmdm -c "
-CREATE TABLE IF NOT EXISTS applications (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    package_id VARCHAR(255) NOT NULL,
-    version VARCHAR(50),
-    created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS devices (
-    id SERIAL PRIMARY KEY,
-    device_id VARCHAR(255) UNIQUE NOT NULL,
-    name VARCHAR(255),
-    last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Add admin user if not exists
-INSERT INTO users (login, email, name, password, user_role) 
-SELECT 'admin', '$EMAIL', 'Administrator', 'admin', 'ADMIN'
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE login = 'admin');
-" || echo "Schema initialization completed (some tables may already exist)"
+# Let HMDM create its own schema on first startup
+echo "HMDM will initialize its database schema on first startup"
+echo "No manual schema creation needed"
 
 # Configure Tomcat for Docker environment
 echo "Configuring Tomcat..."
