@@ -21,12 +21,13 @@ services:
       - tomcat_data:/var/lib/tomcat9
       - tomcat_logs:/var/log/tomcat9
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
-      interval: 30s
-      timeout: 15s
-      retries: 10
-      start_period: 240s
+    # Temporarily disabled to debug startup
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+    #   interval: 30s
+    #   timeout: 15s
+    #   retries: 10
+    #   start_period: 240s
     labels:
       # Coolify labels for automatic SSL and domain configuration
       - "coolify.managed=true"

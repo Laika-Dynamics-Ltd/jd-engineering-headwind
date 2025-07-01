@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+# Prevent multiple installations
+LOCK_FILE="/tmp/hmdm_installed.lock"
+if [ -f "$LOCK_FILE" ]; then
+    echo "=== HMDM already installed, skipping ==="
+    exit 0
+fi
+
 echo "=== Headwind MDM Direct Installation Script ==="
 
 # Environment variables with defaults
@@ -144,10 +151,10 @@ rm -f /var/lib/tomcat9/webapps/ROOT.war
 cp /tmp/hmdm.war /var/lib/tomcat9/webapps/ROOT.war
 chown tomcat:tomcat /var/lib/tomcat9/webapps/ROOT.war
 
-# Verify WAR file size and type
+# Verify WAR file size
 echo "WAR file deployed:"
 ls -la /var/lib/tomcat9/webapps/ROOT.war
-file /var/lib/tomcat9/webapps/ROOT.war
+echo "WAR file size: $(stat -c%s /var/lib/tomcat9/webapps/ROOT.war) bytes"
 
 # Extract WAR manually to ensure deployment
 echo "Manually extracting WAR to ensure deployment..."
@@ -266,4 +273,8 @@ EOL
 echo "Headwind MDM direct installation completed successfully"
 echo "WAR file: /var/lib/tomcat9/webapps/ROOT.war"
 echo "Config: /opt/hmdm/conf/hmdm.properties"
-echo "Files: /var/lib/tomcat9/files" 
+echo "Files: /var/lib/tomcat9/files"
+
+# Create lock file to prevent re-installation
+touch "$LOCK_FILE"
+echo "=== Installation lock file created ===" 
