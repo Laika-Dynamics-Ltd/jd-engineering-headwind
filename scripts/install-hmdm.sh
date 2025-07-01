@@ -33,9 +33,10 @@ END
 \$\$;
 "
 
+# Create hmdm database if it doesn't exist
 PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-SELECT 'CREATE DATABASE hmdm OWNER hmdm' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'hmdm')\\gexec
-"
+SELECT 1 FROM pg_database WHERE datname = 'hmdm';
+" | grep -q 1 || PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "CREATE DATABASE hmdm OWNER hmdm;"
 
 echo "HMDM database created"
 
